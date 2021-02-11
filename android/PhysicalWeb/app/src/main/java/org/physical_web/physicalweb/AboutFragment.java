@@ -37,10 +37,6 @@ public class AboutFragment extends Fragment {
   public AboutFragment() {
   }
 
-  public static AboutFragment newInstance() {
-    return new AboutFragment();
-  }
-
   private void initializeApplicationVersionText() {
     String versionString = getString(R.string.about_version_label) + " " + BuildConfig.VERSION_NAME;
     View view = getView();
@@ -78,8 +74,7 @@ public class AboutFragment extends Fragment {
   @Override
   public void onPrepareOptionsMenu(Menu menu) {
     super.onPrepareOptionsMenu(menu);
-    menu.findItem(R.id.action_config).setVisible(false);
-    menu.findItem(R.id.action_about).setVisible(false);
+    Utils.hideAllMenuItems(menu);
   }
 
 }

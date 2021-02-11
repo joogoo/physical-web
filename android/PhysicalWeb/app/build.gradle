@@ -1,18 +1,20 @@
 apply plugin: 'com.android.application'
-apply plugin: 'checkstyle'
-apply plugin: 'findbugs'
+apply plugin: 'si.dlabs.soter'
 apply plugin: 'pmd'
 
 android {
-    compileSdkVersion 21
-    buildToolsVersion "21.1.2"
+    compileSdkVersion 25
+    buildToolsVersion "25.0.1"
 
     defaultConfig {
         applicationId "physical_web.org.physicalweb"
         minSdkVersion 19
-        targetSdkVersion 21
-        versionCode 15
-        versionName "0.1.856"
+        targetSdkVersion 25
+        versionCode 18
+        versionName "0.2.1"
+        jackOptions {
+            enabled true
+        }
     }
 
     buildTypes {
@@ -23,8 +25,8 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_7
-        targetCompatibility JavaVersion.VERSION_1_7
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 
     if(new File("signing.properties").exists()) {
@@ -49,9 +51,12 @@ android {
 
     lintOptions {
         // We'll get to fixing the icon later
-        disable 'IconLauncherShape', 'IconDensities', 'IconMissingDensityFolder'
-        // Travis requires an older api at the moment
-        disable 'OldTargetApi'
+        // We'll get to updating the target api
+        // We can't use the next app compat until we update the target api
+        disable 'GoogleAppIndexingWarning', 'IconLauncherShape', 'IconDensities',
+            'IconMissingDensityFolder', 'LongLogTag', 'OldTargetApi', 'GradleDependency'
+        abortOnError true
+        warningsAsErrors true
     }
 }
 
@@ -68,44 +73,18 @@ dependencies {
 
     compile 'com.android.volley:volley@aar'
     compile 'org.uribeacon:uribeacon-library-release@aar'
+    compile 'com.android.support:appcompat-v7:24.0.0'
+    compile 'com.youview:tinydnssd:1.2.7'
+    compile 'org.nanohttpd:nanohttpd:2.3.0'
+    testCompile 'junit:junit:4.12'
+    testCompile 'org.mockito:mockito-core:1.10.19'
 
-    compile 'com.android.support:appcompat-v7:22.1.1'
+    checkstyleRules files('config/checkstyle/checkstyle.xml')
+    findbugsRules files('config/findbugs/exclude-filter.xml')
+    pmdRules files('config/pmd/pmd-ruleset.xml')
 }
 
-task checkstyle(type: Checkstyle) {
-    configProperties.checkstyleSuppressionsPath = new File(rootDir, "app/config/checkstyle/suppressions.xml").absolutePath
-    source 'src'
-    include '**/*.java'
-    exclude '**/gen/**'
-    classpath = files()
-}
-
-task findbugs(type: FindBugs, dependsOn: assembleDebug) {
-    ignoreFailures = false
-    effort = "max"
-    reportLevel = "high"
-    classes = files("${project.rootDir}/app/build/intermediates/classes")
-    excludeFilter = file("${project.rootDir}/app/config/findbugs/exclude-filter.xml")
-
-    source 'src'
-    include '**/*.java'
-    exclude '**/gen/**'
-
-    reports {
-        xml.enabled = false
-        html.enabled = true
-        xml {
-            destination "$project.buildDir/reports/findbugs/findbugs.xml"
-        }
-        html {
-            destination "$project.buildDir/reports/findbugs/findbugs.html"
-        }
-    }
-
-    classpath = files()
-}
-
-task pmd(type: Pmd, dependsOn: assembleDebug) {
+task customPmd(type: Pmd) {
     ignoreFailures = false
     ruleSetFiles = files("${project.rootDir}/app/config/pmd/pmd-ruleset.xml")
     ruleSets = []
@@ -115,15 +94,36 @@ task pmd(type: Pmd, dependsOn: assembleDebug) {
     exclude '**/gen/**'
 
     reports {
-        xml.enabled = false
-        html.enabled = true
         xml {
+            enabled = false
             destination "$project.buildDir/reports/pmd/pmd.xml"
         }
         html {
+            enabled = true
             destination "$project.buildDir/reports/pmd/pmd.html"
         }
     }
 }
 
-check.dependsOn 'checkstyle', 'findbugs', 'lint', 'pmd'
+soter {
+    checkstyle {
+        enabled true
+        toolVersion "6.19"
+    }
+
+    findbugs {
+        enabled true
+        effort = "max"
+        reportLevel "high"
+        reportType "html"
+        ignoreFailures false
+    }
+
+    pmd {
+        // Soter currently forces pmd rules we don't want, so we need to include pmd ourselves.
+        enabled false
+        ignoreFailures false
+    }
+}
+
+check.dependsOn 'customPmd', 'lint'

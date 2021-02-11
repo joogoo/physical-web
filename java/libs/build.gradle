@@ -34,6 +34,7 @@ dependencies {
     compile 'org.json:json:20140107'
     testCompile 'junit:junit:4.11'
     testCompile 'org.skyscreamer:jsonassert:1.2.3'
+    compile 'commons-codec:commons-codec:1.10'
 }
 
 task integrationTest(type: Test) {
@@ -43,6 +44,16 @@ task integrationTest(type: Test) {
 }
 
 findbugsMain {
+    ignoreFailures = false
+    effort = "max"
+    reportLevel = "low"
+    reports {
+        xml.enabled = false
+        html.enabled = true
+    }
+}
+
+findbugsTest {
     ignoreFailures = false
     effort = "max"
     reportLevel = "low"
@@ -83,6 +94,10 @@ javadoc {
 
 tasks.withType(Test) {
     reports.html.destination = file("${reporting.baseDir}/${name}")
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.14'
 }
 
 integrationTest.dependsOn assemble

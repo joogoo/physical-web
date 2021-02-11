@@ -19,18 +19,18 @@ package org.physical_web.physicalweb;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 
 /**
  * This receiver starts the UriBeaconDiscoveryService.
  */
 public class AutostartPwoDiscoveryServiceReceiver extends BroadcastReceiver {
   public void onReceive(Context context, Intent intent) {
-    // Make sure the user has opted in
-    String preferencesKey = context.getString(R.string.main_prefs_key);
-    SharedPreferences sharedPreferences =
-        context.getSharedPreferences(preferencesKey, Context.MODE_PRIVATE);
-    if (!sharedPreferences.getBoolean(context.getString(R.string.user_opted_in_flag), false)) {
+    // Make sure we don't get spoofed with the wrong action.
+    if (!intent.getAction().equals(Intent.ACTION_BOOT_COMPLETED)) {
+      return;
+    }
+
+    if (Utils.checkIfUserHasOptedIn(context)) {
       return;
     }
 
